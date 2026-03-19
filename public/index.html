@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Captura de Evidencia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    input[type="file"] {
+      padding: 5px;
+    }
+
+    button {
+      background: #2f80ed;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1c60c7;
+    }
+
+    .status {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .loading {
+      color: orange;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>📸 Evidencia de Carga</h2>
+
+  <form id="form">
+
+    <input name="pedido" placeholder="Pedido" required>
+    <input name="cliente" placeholder="Cliente" required>
+    <input name="operador" placeholder="Operador" required>
+    <input name="placas" placeholder="Placas del camión" required>
+
+    <input type="file" name="fotos" multiple accept="image/*" required>
+
+    <button type="submit">📄 Generar PDF</button>
+
+  </form>
+
+  <div id="status" class="status"></div>
+
+  <script>
+    const form = document.getElementById("form");
+    const status = document.getElementById("status");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      status.className = "status loading";
+      status.innerText = "⏳ Generando PDF...";
+
+      try {
+        const formData = new FormData(form);
+        const pedido = formData.get("pedido") || "SIN_PEDIDO";
+
+        const res = await fetch("/generar", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) {
+          throw new Error("Error en el servidor");
+        }
+
+        const blob = await res.blob();
+
+        // Validar que el PDF no esté vacío
+        if (blob.size < 1000) {
+          throw new Error("PDF vacío o corrupto");
+        }
+
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Evidencia_${pedido}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
+
+        status.className = "status success";
+        status.innerText = "✅ PDF generado correctamente";
+
+      } catch (error) {
+        console.error(error);
+
+        status.className = "status error";
+        status.innerText = "❌ Error generando el PDF";
+      }
+    });
+  </script>
+
+</body>
+</html>

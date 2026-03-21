@@ -1,17 +1,26 @@
+const express = require("express");
+const cors = require("cors");
+const multer = require("multer");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 
-const express = require("express");
-const cors = require("cors");
-const multer = require("multer");
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Guardado en memoria (temporal)
+// =====================
+// MEMORIA TEMPORAL
+// =====================
 let pedidos = [];
+
+// =====================
+// RUTA PRINCIPAL
+// =====================
+app.get("/", (req, res) => {
+  res.send("Servidor funcionando 🚀");
+});
 
 // =====================
 // CREAR PEDIDO
@@ -37,7 +46,14 @@ app.post("/api/pedido", (req, res) => {
 });
 
 // =====================
-// CONFIGURAR MULTER (fotos)
+// VER PEDIDOS
+// =====================
+app.get("/api/pedidos", (req, res) => {
+  res.json(pedidos);
+});
+
+// =====================
+// CONFIGURAR MULTER
 // =====================
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -73,21 +89,6 @@ app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
 });
 
 // =====================
-// VER PEDIDOS
-// =====================
-app.get("/api/pedidos", (req, res) => {
-  res.json(pedidos);
-});
-
-// =====================
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Servidor listo 🚀"));
-
-app.get("/", (req, res) => {
-  res.send("Servidor funcionando 🚀");
-});
-// =====================
 // GENERAR PDF
 // =====================
 app.get("/api/pedido/:pedido/pdf", (req, res) => {
@@ -116,10 +117,8 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
   doc.text(`Placas: ${pedidoData.placas}`);
   doc.text(`Válido: ${pedidoData.valido}`);
 
-  doc.moveDown();
-
   // FOTOS
-  pedidoData.fotos.forEach((foto, index) => {
+  pedidoData.fotos.forEach((foto) => {
     const ruta = path.join(__dirname, "uploads", foto);
 
     if (fs.existsSync(ruta)) {
@@ -133,3 +132,7 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
 
   doc.end();
 });
+
+// =====================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Servidor listo 🚀"));

@@ -32,10 +32,16 @@ app.get("/", (req, res) => {
 // CREAR PEDIDO
 // =====================
 app.post("/api/pedido", (req, res) => {
+  console.log("BODY RECIBIDO:", req.body);
+
   const { pedido, cliente, chofer, placas, valido } = req.body;
 
+  if (!pedido) {
+    return res.status(400).json({ mensaje: "Falta número de pedido" });
+  }
+
   const nuevoPedido = {
-    pedido,
+    pedido: String(pedido),
     cliente,
     chofer,
     placas,
@@ -44,6 +50,8 @@ app.post("/api/pedido", (req, res) => {
   };
 
   pedidos.push(nuevoPedido);
+
+  console.log("PEDIDOS ACTUALES:", pedidos);
 
   res.json({
     mensaje: "Pedido creado",
@@ -78,15 +86,20 @@ const upload = multer({ storage });
 app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
   const { pedido } = req.params;
 
-  const pedidoEncontrado = pedidos.find(p => p.pedido == pedido);
+  console.log("SUBIENDO FOTOS PARA:", pedido);
+
+  const pedidoEncontrado = pedidos.find(p => p.pedido === String(pedido));
 
   if (!pedidoEncontrado) {
+    console.log("❌ Pedido no encontrado");
     return res.status(404).json({ mensaje: "Pedido no encontrado" });
   }
 
   req.files.forEach(file => {
     pedidoEncontrado.fotos.push(file.filename);
   });
+
+  console.log("FOTOS ACTUALES:", pedidoEncontrado.fotos);
 
   res.json({
     mensaje: "Fotos subidas",
@@ -100,11 +113,16 @@ app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
 app.get("/api/pedido/:pedido/pdf", (req, res) => {
   const { pedido } = req.params;
 
-  const pedidoData = pedidos.find(p => p.pedido == pedido);
+  console.log("GENERANDO PDF PARA:", pedido);
+
+  const pedidoData = pedidos.find(p => p.pedido === String(pedido));
 
   if (!pedidoData) {
+    console.log("❌ Pedido no encontrado para PDF");
     return res.status(404).send("Pedido no encontrado");
   }
+
+  console.log("DATOS DEL PEDIDO:", pedidoData);
 
   const doc = new PDFDocument();
 
@@ -113,7 +131,7 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
 
   doc.pipe(res);
 
-  // ===== HOJA 1 =====
+  // HOJA 1
   if (fs.existsSync(logoPath)) {
     doc.image(logoPath, 50, 20, { width: 100 });
   }
@@ -128,14 +146,13 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
   doc.text(`Placas: ${pedidoData.placas}`);
   doc.text(`Válido: ${pedidoData.valido}`);
 
-  // ===== FOTOS =====
+  // FOTOS
   pedidoData.fotos.forEach((foto) => {
     const ruta = path.join(__dirname, "uploads", foto);
 
     if (fs.existsSync(ruta)) {
       doc.addPage();
 
-      // LOGO EN CADA HOJA
       if (fs.existsSync(logoPath)) {
         doc.image(logoPath, 50, 20, { width: 100 });
       }
@@ -146,6 +163,8 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
         fit: [500, 400],
         align: "center"
       });
+    } else {
+      console.log("⚠️ Imagen no encontrada:", ruta);
     }
   });
 

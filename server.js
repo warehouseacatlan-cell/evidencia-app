@@ -1,3 +1,7 @@
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
+
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -82,4 +86,50 @@ app.listen(PORT, () => console.log("Servidor listo 🚀"));
 
 app.get("/", (req, res) => {
   res.send("Servidor funcionando 🚀");
+});
+// =====================
+// GENERAR PDF
+// =====================
+app.get("/api/pedido/:pedido/pdf", (req, res) => {
+  const { pedido } = req.params;
+
+  const pedidoData = pedidos.find(p => p.pedido == pedido);
+
+  if (!pedidoData) {
+    return res.status(404).send("Pedido no encontrado");
+  }
+
+  const doc = new PDFDocument();
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename=${pedido}.pdf`);
+
+  doc.pipe(res);
+
+  // TÍTULO
+  doc.fontSize(20).text(`Pedido: ${pedidoData.pedido}`);
+  doc.moveDown();
+
+  // DATOS
+  doc.fontSize(12).text(`Cliente: ${pedidoData.cliente}`);
+  doc.text(`Chofer: ${pedidoData.chofer}`);
+  doc.text(`Placas: ${pedidoData.placas}`);
+  doc.text(`Válido: ${pedidoData.valido}`);
+
+  doc.moveDown();
+
+  // FOTOS
+  pedidoData.fotos.forEach((foto, index) => {
+    const ruta = path.join(__dirname, "uploads", foto);
+
+    if (fs.existsSync(ruta)) {
+      doc.addPage();
+      doc.image(ruta, {
+        fit: [500, 400],
+        align: "center"
+      });
+    }
+  });
+
+  doc.end();
 });

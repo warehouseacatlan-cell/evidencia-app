@@ -3,12 +3,12 @@ const app = express();
 
 app.use(express.json());
 
-// Ruta de prueba
+// Ruta principal
 app.get("/", (req, res) => {
   res.send("API funcionando 🚀");
 });
 
-// Ejemplo de endpoint
+// Ruta de prueba
 app.get("/api/test", (req, res) => {
   res.json({ mensaje: "Todo bien" });
 });

@@ -17,19 +17,13 @@ app.use(cors());
 app.use(express.json());
 
 // =====================
-// MEMORIA TEMPORAL
-// =====================
 let pedidos = [];
 
-// =====================
-// RUTA PRINCIPAL
 // =====================
 app.get("/", (req, res) => {
   res.send("Servidor funcionando 🚀");
 });
 
-// =====================
-// CONFIGURAR MULTER
 // =====================
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -43,18 +37,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // =====================
-// SUBIR FOTOS + CREAR PEDIDO AUTOMÁTICO
-// =====================
 app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
   const { pedido } = req.params;
   const { cliente, chofer, placas, valido } = req.body;
 
-  console.log("RECIBIENDO PEDIDO:", pedido);
-
-  // Buscar si ya existe
   let pedidoEncontrado = pedidos.find(p => p.pedido === String(pedido));
 
-  // Si no existe, crearlo automáticamente
   if (!pedidoEncontrado) {
     pedidoEncontrado = {
       pedido: String(pedido),
@@ -64,17 +52,12 @@ app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
       valido: valido || "N/A",
       fotos: []
     };
-
     pedidos.push(pedidoEncontrado);
-    console.log("✅ Pedido creado automáticamente");
   }
 
-  // Guardar fotos
   req.files.forEach(file => {
     pedidoEncontrado.fotos.push(file.filename);
   });
-
-  console.log("📸 Fotos guardadas:", pedidoEncontrado.fotos);
 
   res.json({
     mensaje: "Fotos subidas y pedido listo",
@@ -83,12 +66,8 @@ app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
 });
 
 // =====================
-// GENERAR PDF
-// =====================
 app.get("/api/pedido/:pedido/pdf", (req, res) => {
   const { pedido } = req.params;
-
-  console.log("GENERANDO PDF:", pedido);
 
   const pedidoData = pedidos.find(p => p.pedido === String(pedido));
 
@@ -103,9 +82,13 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
 
   doc.pipe(res);
 
-  // HOJA 1
-  if (fs.existsSync(logoPath)) {
-    doc.image(logoPath, 50, 20, { width: 100 });
+  // 🔥 LOGO SEGURO (NO ROMPE)
+  try {
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 100 });
+    }
+  } catch (err) {
+    console.log("Error cargando logo:", err.message);
   }
 
   doc.moveDown(3);
@@ -118,15 +101,19 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
   doc.text(`Placas: ${pedidoData.placas}`);
   doc.text(`Válido: ${pedidoData.valido}`);
 
-  // FOTOS
   pedidoData.fotos.forEach((foto) => {
     const ruta = path.join(__dirname, "uploads", foto);
 
     if (fs.existsSync(ruta)) {
       doc.addPage();
 
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 100 });
+      // 🔥 LOGO SEGURO EN CADA HOJA
+      try {
+        if (fs.existsSync(logoPath)) {
+          doc.image(logoPath, 50, 20, { width: 100 });
+        }
+      } catch (err) {
+        console.log("Error logo página:", err.message);
       }
 
       doc.moveDown(3);
@@ -141,8 +128,6 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
   doc.end();
 });
 
-// =====================
-// INICIAR SERVIDOR
 // =====================
 const PORT = process.env.PORT || 3000;
 

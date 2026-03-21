@@ -103,37 +103,45 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
 
   const doc = new PDFDocument();
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `inline; filename=${pedido}.pdf`);
+res.setHeader("Content-Type", "application/pdf");
+res.setHeader("Content-Disposition", `inline; filename=${pedido}.pdf`);
 
-  doc.pipe(res);
+doc.pipe(res);
 
-  // TÍTULO
-  doc.fontSize(20).text(`Pedido: ${pedidoData.pedido}`);
-  doc.moveDown();
+// ===== HOJA 1 =====
+if (fs.existsSync(logoPath)) {
+  doc.image(logoPath, 50, 20, { width: 100 });
+}
 
-  // DATOS
-  doc.fontSize(12).text(`Cliente: ${pedidoData.cliente}`);
-  doc.text(`Chofer: ${pedidoData.chofer}`);
-  doc.text(`Placas: ${pedidoData.placas}`);
-  doc.text(`Válido: ${pedidoData.valido}`);
+doc.moveDown(3);
 
-  // FOTOS
-  pedidoData.fotos.forEach((foto) => {
-    const ruta = path.join(__dirname, "uploads", foto);
+doc.fontSize(20).text(`Pedido: ${pedidoData.pedido}`);
+doc.moveDown();
 
-    if (fs.existsSync(ruta)) {
-      doc.addPage();
-      doc.image(ruta, {
-        fit: [500, 400],
-        align: "center"
-      });
+doc.fontSize(12).text(`Cliente: ${pedidoData.cliente}`);
+doc.text(`Chofer: ${pedidoData.chofer}`);
+doc.text(`Placas: ${pedidoData.placas}`);
+doc.text(`Válido: ${pedidoData.valido}`);
+
+// ===== FOTOS =====
+pedidoData.fotos.forEach((foto) => {
+  const ruta = path.join(__dirname, "uploads", foto);
+
+  if (fs.existsSync(ruta)) {
+    doc.addPage();
+
+    // LOGO EN CADA HOJA
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 100 });
     }
-  });
 
-  doc.end();
+    doc.moveDown(3);
+
+    doc.image(ruta, {
+      fit: [500, 400],
+      align: "center"
+    });
+  }
 });
 
-// =====================
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Servidor listo 🚀"));
+doc.end();

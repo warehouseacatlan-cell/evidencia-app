@@ -29,44 +29,6 @@ app.get("/", (req, res) => {
 });
 
 // =====================
-// CREAR PEDIDO
-// =====================
-app.post("/api/pedido", (req, res) => {
-  console.log("BODY RECIBIDO:", req.body);
-
-  const { pedido, cliente, chofer, placas, valido } = req.body;
-
-  if (!pedido) {
-    return res.status(400).json({ mensaje: "Falta número de pedido" });
-  }
-
-  const nuevoPedido = {
-    pedido: String(pedido),
-    cliente,
-    chofer,
-    placas,
-    valido,
-    fotos: []
-  };
-
-  pedidos.push(nuevoPedido);
-
-  console.log("PEDIDOS ACTUALES:", pedidos);
-
-  res.json({
-    mensaje: "Pedido creado",
-    data: nuevoPedido
-  });
-});
-
-// =====================
-// VER PEDIDOS
-// =====================
-app.get("/api/pedidos", (req, res) => {
-  res.json(pedidos);
-});
-
-// =====================
 // CONFIGURAR MULTER
 // =====================
 const storage = multer.diskStorage({
@@ -81,29 +43,42 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // =====================
-// SUBIR FOTOS
+// SUBIR FOTOS + CREAR PEDIDO AUTOMÁTICO
 // =====================
 app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
   const { pedido } = req.params;
+  const { cliente, chofer, placas, valido } = req.body;
 
-  console.log("SUBIENDO FOTOS PARA:", pedido);
+  console.log("RECIBIENDO PEDIDO:", pedido);
 
-  const pedidoEncontrado = pedidos.find(p => p.pedido === String(pedido));
+  // Buscar si ya existe
+  let pedidoEncontrado = pedidos.find(p => p.pedido === String(pedido));
 
+  // Si no existe, crearlo automáticamente
   if (!pedidoEncontrado) {
-    console.log("❌ Pedido no encontrado");
-    return res.status(404).json({ mensaje: "Pedido no encontrado" });
+    pedidoEncontrado = {
+      pedido: String(pedido),
+      cliente: cliente || "N/A",
+      chofer: chofer || "N/A",
+      placas: placas || "N/A",
+      valido: valido || "N/A",
+      fotos: []
+    };
+
+    pedidos.push(pedidoEncontrado);
+    console.log("✅ Pedido creado automáticamente");
   }
 
+  // Guardar fotos
   req.files.forEach(file => {
     pedidoEncontrado.fotos.push(file.filename);
   });
 
-  console.log("FOTOS ACTUALES:", pedidoEncontrado.fotos);
+  console.log("📸 Fotos guardadas:", pedidoEncontrado.fotos);
 
   res.json({
-    mensaje: "Fotos subidas",
-    total: pedidoEncontrado.fotos.length
+    mensaje: "Fotos subidas y pedido listo",
+    pedido: pedidoEncontrado
   });
 });
 
@@ -113,16 +88,13 @@ app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
 app.get("/api/pedido/:pedido/pdf", (req, res) => {
   const { pedido } = req.params;
 
-  console.log("GENERANDO PDF PARA:", pedido);
+  console.log("GENERANDO PDF:", pedido);
 
   const pedidoData = pedidos.find(p => p.pedido === String(pedido));
 
   if (!pedidoData) {
-    console.log("❌ Pedido no encontrado para PDF");
     return res.status(404).send("Pedido no encontrado");
   }
-
-  console.log("DATOS DEL PEDIDO:", pedidoData);
 
   const doc = new PDFDocument();
 
@@ -163,8 +135,6 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
         fit: [500, 400],
         align: "center"
       });
-    } else {
-      console.log("⚠️ Imagen no encontrada:", ruta);
     }
   });
 

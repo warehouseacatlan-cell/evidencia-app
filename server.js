@@ -15,3 +15,15 @@ app.get("/api/test", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor listo"));
+
+// Guardar pedido
+app.post("/api/pedido", (req, res) => {
+  const datos = req.body;
+
+  console.log("Pedido recibido:", datos);
+
+  res.json({
+    mensaje: "Pedido guardado",
+    data: datos
+  });
+});

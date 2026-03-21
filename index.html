@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Evidencias</title>
+</head>
+<body>
+
+<h2>Subir Evidencia</h2>
+
+<input type="text" id="pedido" placeholder="Pedido"><br><br>
+<input type="text" id="cliente" placeholder="Cliente"><br><br>
+<input type="text" id="chofer" placeholder="Chofer"><br><br>
+<input type="text" id="placas" placeholder="Placas"><br><br>
+<input type="text" id="valido" placeholder="Valido"><br><br>
+
+<input type="file" id="fotos" multiple><br><br>
+
+<button onclick="subir()">Subir Fotos</button>
+<button onclick="verPDF()">Ver PDF</button>
+
+<script>
+const URL = "https://evidencia-app-1.onrender.com";
+
+async function subir() {
+  const formData = new FormData();
+
+  const pedido = document.getElementById("pedido").value;
+
+  formData.append("cliente", document.getElementById("cliente").value);
+  formData.append("chofer", document.getElementById("chofer").value);
+  formData.append("placas", document.getElementById("placas").value);
+  formData.append("valido", document.getElementById("valido").value);
+
+  const files = document.getElementById("fotos").files;
+
+  for (let i = 0; i < files.length; i++) {
+    formData.append("fotos", files[i]);
+  }
+
+  const res = await fetch(`${URL}/api/pedido/${pedido}/fotos`, {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+  alert(JSON.stringify(data));
+}
+
+function verPDF() {
+  const pedido = document.getElementById("pedido").value;
+  window.open(`${URL}/api/pedido/${pedido}/pdf`, "_blank");
+}
+</script>
+
+</body>
+</html>

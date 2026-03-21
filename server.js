@@ -4,9 +4,14 @@ const multer = require("multer");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
-const logoPath = path.join(__dirname, "logo.png");
 
 const app = express();
+const logoPath = path.join(__dirname, "logo.png");
+
+// Crear carpeta uploads si no existe
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
 
 app.use(cors());
 app.use(express.json());
@@ -103,46 +108,55 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
 
   const doc = new PDFDocument();
 
-res.setHeader("Content-Type", "application/pdf");
-res.setHeader("Content-Disposition", `inline; filename=${pedido}.pdf`);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename=${pedido}.pdf`);
 
-doc.pipe(res);
+  doc.pipe(res);
 
-// ===== HOJA 1 =====
-if (fs.existsSync(logoPath)) {
-  doc.image(logoPath, 50, 20, { width: 100 });
-}
-
-doc.moveDown(3);
-
-doc.fontSize(20).text(`Pedido: ${pedidoData.pedido}`);
-doc.moveDown();
-
-doc.fontSize(12).text(`Cliente: ${pedidoData.cliente}`);
-doc.text(`Chofer: ${pedidoData.chofer}`);
-doc.text(`Placas: ${pedidoData.placas}`);
-doc.text(`Válido: ${pedidoData.valido}`);
-
-// ===== FOTOS =====
-pedidoData.fotos.forEach((foto) => {
-  const ruta = path.join(__dirname, "uploads", foto);
-
-  if (fs.existsSync(ruta)) {
-    doc.addPage();
-
-    // LOGO EN CADA HOJA
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 50, 20, { width: 100 });
-    }
-
-    doc.moveDown(3);
-
-    doc.image(ruta, {
-      fit: [500, 400],
-      align: "center"
-    });
+  // ===== HOJA 1 =====
+  if (fs.existsSync(logoPath)) {
+    doc.image(logoPath, 50, 20, { width: 100 });
   }
+
+  doc.moveDown(3);
+
+  doc.fontSize(20).text(`Pedido: ${pedidoData.pedido}`);
+  doc.moveDown();
+
+  doc.fontSize(12).text(`Cliente: ${pedidoData.cliente}`);
+  doc.text(`Chofer: ${pedidoData.chofer}`);
+  doc.text(`Placas: ${pedidoData.placas}`);
+  doc.text(`Válido: ${pedidoData.valido}`);
+
+  // ===== FOTOS =====
+  pedidoData.fotos.forEach((foto) => {
+    const ruta = path.join(__dirname, "uploads", foto);
+
+    if (fs.existsSync(ruta)) {
+      doc.addPage();
+
+      // LOGO EN CADA HOJA
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 50, 20, { width: 100 });
+      }
+
+      doc.moveDown(3);
+
+      doc.image(ruta, {
+        fit: [500, 400],
+        align: "center"
+      });
+    }
+  });
+
+  doc.end();
 });
 
-doc.end();
-}
+// =====================
+// INICIAR SERVIDOR
+// =====================
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
+});

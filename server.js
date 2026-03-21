@@ -4,6 +4,7 @@ const multer = require("multer");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const logoPath = path.join(__dirname, "logo.png");
 
 const app = express();
 

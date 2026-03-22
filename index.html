@@ -6,7 +6,7 @@
 </head>
 <body>
 
-<h2>Subir Evidencia</h2>
+<h2>Evidencias</h2>
 
 <input type="text" id="pedido" placeholder="Pedido"><br><br>
 <input type="text" id="cliente" placeholder="Cliente"><br><br>
@@ -16,43 +16,43 @@
 
 <input type="file" id="foto" accept="image/*"><br><br>
 
-<button onclick="subirFoto()">📷 Subir Foto</button>
-<button onclick="verPDF()">📄 Ver PDF</button>
+<button onclick="subir()">Subir Foto</button>
+<button onclick="pdf()">Ver PDF</button>
 
-<p id="estado">Fotos subidas: 0</p>
+<p id="estado"></p>
 
 <script>
-async function subirFoto() {
+async function subir() {
   const pedido = document.getElementById("pedido").value;
   const file = document.getElementById("foto").files[0];
 
-  if (!pedido) return alert("Ingresa pedido");
+  if (!pedido) return alert("Pedido requerido");
   if (!file) return alert("Selecciona foto");
 
-  const formData = new FormData();
+  const fd = new FormData();
 
-  formData.append("cliente", document.getElementById("cliente").value);
-  formData.append("chofer", document.getElementById("chofer").value);
-  formData.append("placas", document.getElementById("placas").value);
-  formData.append("valido", document.getElementById("valido").value);
-  formData.append("fotos", file);
+  fd.append("cliente", document.getElementById("cliente").value);
+  fd.append("chofer", document.getElementById("chofer").value);
+  fd.append("placas", document.getElementById("placas").value);
+  fd.append("valido", document.getElementById("valido").value);
+  fd.append("fotos", file);
 
   const res = await fetch(`/api/pedido/${pedido}/fotos`, {
     method: "POST",
-    body: formData
+    body: fd
   });
 
   const data = await res.json();
 
   document.getElementById("estado").innerText =
-    "Fotos subidas: " + data.pedido.fotos.length;
-
-  alert("Foto subida ✔");
+    "Fotos: " + data.pedido.fotos.length;
 
   document.getElementById("foto").value = "";
+
+  alert("Subida OK");
 }
 
-function verPDF() {
+function pdf() {
   const pedido = document.getElementById("pedido").value;
   window.open(`/api/pedido/${pedido}/pdf`, "_blank");
 }

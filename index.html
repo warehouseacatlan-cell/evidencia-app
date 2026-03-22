@@ -42,7 +42,7 @@
       cursor: pointer;
     }
 
-    .btn-subir {
+    .btn-camara {
       background: #28a745;
     }
 
@@ -62,6 +62,11 @@
       margin-top: 10px;
       font-weight: bold;
     }
+
+    /* ocultamos input */
+    #foto {
+      display: none;
+    }
   </style>
 </head>
 
@@ -79,9 +84,10 @@
     <input type="text" id="placas" placeholder="Placas">
     <input type="text" id="valido" placeholder="Válido">
 
+    <!-- INPUT OCULTO -->
     <input type="file" id="foto" accept="image/*">
 
-    <button class="btn-subir" onclick="subir()">📷 Subir Foto</button>
+    <button class="btn-camara" onclick="abrirCamara()">📷 Tomar / Elegir Foto</button>
     <button class="btn-pdf" onclick="pdf()">📄 Ver PDF</button>
 
     <p id="estado">Fotos: 0</p>
@@ -91,12 +97,23 @@
 </div>
 
 <script>
+function abrirCamara() {
+  document.getElementById("foto").click();
+}
+
+// cuando el usuario toma o elige foto
+document.getElementById("foto").addEventListener("change", subir);
+
 async function subir() {
   const pedido = document.getElementById("pedido").value;
   const file = document.getElementById("foto").files[0];
 
-  if (!pedido) return alert("Pedido requerido");
-  if (!file) return alert("Selecciona foto");
+  if (!pedido) {
+    alert("Pedido requerido");
+    return;
+  }
+
+  if (!file) return;
 
   const fd = new FormData();
 
@@ -106,19 +123,24 @@ async function subir() {
   fd.append("valido", document.getElementById("valido").value);
   fd.append("fotos", file);
 
-  const res = await fetch(`/api/pedido/${pedido}/fotos`, {
-    method: "POST",
-    body: fd
-  });
+  try {
+    const res = await fetch(`/api/pedido/${pedido}/fotos`, {
+      method: "POST",
+      body: fd
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  document.getElementById("estado").innerText =
-    "Fotos: " + data.pedido.fotos.length;
+    document.getElementById("estado").innerText =
+      "Fotos: " + data.pedido.fotos.length;
 
-  document.getElementById("foto").value = "";
+    alert("Foto subida ✔");
 
-  alert("Foto subida ✔");
+    document.getElementById("foto").value = "";
+
+  } catch (e) {
+    alert("Error al subir");
+  }
 }
 
 function pdf() {

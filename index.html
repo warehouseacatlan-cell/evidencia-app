@@ -18,6 +18,10 @@
       padding: 20px;
     }
 
+    h2 {
+      text-align: center;
+    }
+
     input, button {
       width: 100%;
       padding: 12px;
@@ -29,10 +33,15 @@
     button {
       border: none;
       color: white;
+      cursor: pointer;
     }
 
-    .btn-subir {
+    .btn-camara {
       background: #28a745;
+    }
+
+    .btn-galeria {
+      background: #6c757d;
     }
 
     .btn-pdf {
@@ -44,6 +53,17 @@
       padding: 15px;
       border-radius: 12px;
       box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #estado {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    /* ocultamos inputs */
+    #fotoCamara, #fotoGaleria {
+      display: none;
     }
   </style>
 </head>
@@ -62,11 +82,14 @@
     <input type="text" id="placas" placeholder="Placas">
     <input type="text" id="valido" placeholder="Válido">
 
-    <!-- 🔥 INPUT ORIGINAL (EL QUE SÍ FUNCIONA) -->
-    <input type="file" id="foto" accept="image/*">
+    <!-- INPUTS -->
+    <input type="file" id="fotoCamara" accept="image/*" capture="environment">
+    <input type="file" id="fotoGaleria" accept="image/*">
 
-    <button class="btn-subir" onclick="subir()">Subir Foto</button>
-    <button class="btn-pdf" onclick="pdf()">Ver PDF</button>
+    <!-- BOTONES -->
+    <button class="btn-camara" onclick="abrirCamara()">📷 Tomar Foto</button>
+    <button class="btn-galeria" onclick="abrirGaleria()">🖼 Elegir de Galería</button>
+    <button class="btn-pdf" onclick="pdf()">📄 Ver PDF</button>
 
     <p id="estado">Fotos: 0</p>
 
@@ -75,12 +98,19 @@
 </div>
 
 <script>
-async function subir() {
+function abrirCamara() {
+  document.getElementById("fotoCamara").click();
+}
+
+function abrirGaleria() {
+  document.getElementById("fotoGaleria").click();
+}
+
+async function subirArchivo(file) {
   const pedido = document.getElementById("pedido").value;
-  const file = document.getElementById("foto").files[0];
 
   if (!pedido) return alert("Pedido requerido");
-  if (!file) return alert("Selecciona o toma una foto");
+  if (!file) return;
 
   const fd = new FormData();
 
@@ -90,20 +120,35 @@ async function subir() {
   fd.append("valido", document.getElementById("valido").value);
   fd.append("fotos", file);
 
-  const res = await fetch(`/api/pedido/${pedido}/fotos`, {
-    method: "POST",
-    body: fd
-  });
+  try {
+    const res = await fetch(`/api/pedido/${pedido}/fotos`, {
+      method: "POST",
+      body: fd
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  document.getElementById("estado").innerText =
-    "Fotos: " + data.pedido.fotos.length;
+    document.getElementById("estado").innerText =
+      "Fotos: " + data.pedido.fotos.length;
 
-  document.getElementById("foto").value = "";
+    alert("Foto subida ✔");
 
-  alert("Foto subida ✔");
+  } catch (e) {
+    alert("Error al subir ❌");
+  }
 }
+
+// cámara
+document.getElementById("fotoCamara").addEventListener("change", (e) => {
+  subirArchivo(e.target.files[0]);
+  e.target.value = "";
+});
+
+// galería
+document.getElementById("fotoGaleria").addEventListener("change", (e) => {
+  subirArchivo(e.target.files[0]);
+  e.target.value = "";
+});
 
 function pdf() {
   const pedido = document.getElementById("pedido").value;

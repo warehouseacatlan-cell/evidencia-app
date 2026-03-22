@@ -8,34 +8,28 @@ const path = require("path");
 const app = express();
 const logoPath = path.join(__dirname, "logo.png");
 
-// Crear carpeta uploads si no existe
+// Crear carpeta uploads
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
 }
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // 🔥 SERVIR HTML
-
-let pedidos = [];
+app.use(express.static(__dirname));
 
 // =====================
-// RUTA PRINCIPAL (HTML)
+let pedidos = [];
+
 // =====================
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
 // =====================
-// MULTER
-// =====================
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  }
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + "-" + file.originalname)
 });
 
 const upload = multer({ storage });
@@ -72,18 +66,17 @@ app.post("/api/pedido/:pedido/fotos", upload.array("fotos", 50), (req, res) => {
 });
 
 // =====================
-// PDF
+// GENERAR PDF PRO
 // =====================
 app.get("/api/pedido/:pedido/pdf", (req, res) => {
   const { pedido } = req.params;
 
   const pedidoData = pedidos.find(p => p.pedido === String(pedido));
-
   if (!pedidoData) {
     return res.status(404).send("Pedido no encontrado");
   }
 
-  const doc = new PDFDocument({ margin: 50 });
+  const doc = new PDFDocument({ margin: 40 });
 
   const fecha = new Date().toISOString().split("T")[0];
   const clienteLimpio = pedidoData.cliente.replace(/\s+/g, "_");
@@ -97,44 +90,66 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
   const agregarLogo = () => {
     try {
       if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 100 });
+        doc.image(logoPath, 40, 20, { width: 100 });
       }
     } catch (e) {}
   };
 
-  // HOJA 1
+  // =====================
+  // HOJA 1 (FORMATO)
+  // =====================
   agregarLogo();
+
   doc.moveDown(4);
 
-  doc.fontSize(18).text("EVIDENCIA DE ENTREGA", { align: "center" });
-  doc.moveDown();
+  doc
+    .fontSize(20)
+    .text("EVIDENCIA DE ENTREGA", { align: "center" });
 
-  doc.fontSize(12).text(`Pedido: ${pedidoData.pedido}`);
-  doc.text(`Cliente: ${pedidoData.cliente}`);
-  doc.text(`Chofer: ${pedidoData.chofer}`);
-  doc.text(`Placas: ${pedidoData.placas}`);
-  doc.text(`Valido: ${pedidoData.valido}`);
+  doc.moveDown(2);
 
-  // FOTOS
-  pedidoData.fotos.forEach((foto, i) => {
-    const ruta = path.join(__dirname, "uploads", foto);
+  const y = doc.y;
 
-    if (fs.existsSync(ruta)) {
-      doc.addPage();
-      agregarLogo();
+  doc.fontSize(14);
 
-      doc.moveDown(4);
-      doc.text(`Evidencia ${i + 1}`, { align: "center" });
-      doc.moveDown();
+  doc.text(`Pedido: ${pedidoData.pedido}`, 60, y);
+  doc.text(`Cliente: ${pedidoData.cliente}`, 60, y + 50);
+  doc.text(`Chofer: ${pedidoData.chofer}`, 60, y + 100);
+  doc.text(`Placas: ${pedidoData.placas}`, 60, y + 150);
+  doc.text(`Válido: ${pedidoData.valido}`, 60, y + 200);
 
-      try {
-        doc.image(ruta, {
-          fit: [450, 350],
-          align: "center"
-        });
-      } catch (e) {}
+  // =====================
+  // FOTOS 4 POR HOJA
+  // =====================
+  const fotos = pedidoData.fotos;
+
+  const posiciones = [
+    { x: 50, y: 80 },
+    { x: 300, y: 80 },
+    { x: 50, y: 320 },
+    { x: 300, y: 320 }
+  ];
+
+  let index = 0;
+
+  while (index < fotos.length) {
+    doc.addPage();
+    agregarLogo();
+
+    for (let i = 0; i < 4 && index < fotos.length; i++, index++) {
+      const ruta = path.join(__dirname, "uploads", fotos[index]);
+
+      if (fs.existsSync(ruta)) {
+        try {
+          doc.image(ruta, posiciones[i].x, posiciones[i].y, {
+            fit: [220, 200]
+          });
+        } catch (e) {
+          console.log("Error imagen:", e.message);
+        }
+      }
     }
-  });
+  }
 
   doc.end();
 });
@@ -143,5 +158,5 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Servidor corriendo");
+  console.log("Servidor corriendo 🚀");
 });

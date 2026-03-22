@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>Evidencias</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 
@@ -13,41 +14,71 @@
 <input type="text" id="placas" placeholder="Placas"><br><br>
 <input type="text" id="valido" placeholder="Valido"><br><br>
 
-<input type="file" id="fotos" multiple><br><br>
+<!-- INPUT CORREGIDO -->
+<input type="file" id="foto" accept="image/*"><br><br>
 
-<button onclick="subir()">Subir Fotos</button>
-<button onclick="verPDF()">Ver PDF</button>
+<button onclick="subirFoto()">📷 Subir Foto</button>
+<button onclick="verPDF()">📄 Ver PDF</button>
+
+<p id="estado">Fotos subidas: 0</p>
 
 <script>
 const URL = "https://evidencia-app-1.onrender.com";
 
-async function subir() {
-  const formData = new FormData();
-
+async function subirFoto() {
   const pedido = document.getElementById("pedido").value;
+  const fileInput = document.getElementById("foto");
+  const file = fileInput.files[0];
+
+  if (!pedido) {
+    alert("Ingresa número de pedido");
+    return;
+  }
+
+  if (!file) {
+    alert("Selecciona o toma una foto");
+    return;
+  }
+
+  const formData = new FormData();
 
   formData.append("cliente", document.getElementById("cliente").value);
   formData.append("chofer", document.getElementById("chofer").value);
   formData.append("placas", document.getElementById("placas").value);
   formData.append("valido", document.getElementById("valido").value);
 
-  const files = document.getElementById("fotos").files;
+  formData.append("fotos", file);
 
-  for (let i = 0; i < files.length; i++) {
-    formData.append("fotos", files[i]);
+  try {
+    const res = await fetch(`${URL}/api/pedido/${pedido}/fotos`, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+
+    document.getElementById("estado").innerText =
+      "Fotos subidas: " + data.pedido.fotos.length;
+
+    alert("Foto subida correctamente ✔");
+
+    // limpiar para siguiente foto
+    fileInput.value = "";
+
+  } catch (error) {
+    console.error(error);
+    alert("Error al subir la foto ❌");
   }
-
-  const res = await fetch(`${URL}/api/pedido/${pedido}/fotos`, {
-    method: "POST",
-    body: formData
-  });
-
-  const data = await res.json();
-  alert(JSON.stringify(data));
 }
 
 function verPDF() {
   const pedido = document.getElementById("pedido").value;
+
+  if (!pedido) {
+    alert("Ingresa número de pedido");
+    return;
+  }
+
   window.open(`${URL}/api/pedido/${pedido}/pdf`, "_blank");
 }
 </script>

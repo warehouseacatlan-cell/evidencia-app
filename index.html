@@ -18,31 +18,20 @@
       padding: 20px;
     }
 
-    h2 {
-      text-align: center;
-    }
-
-    input {
+    input, button {
       width: 100%;
       padding: 12px;
       margin: 6px 0;
       border-radius: 8px;
-      border: 1px solid #ccc;
       font-size: 16px;
     }
 
     button {
-      width: 100%;
-      padding: 14px;
-      margin-top: 10px;
       border: none;
-      border-radius: 10px;
-      font-size: 16px;
       color: white;
-      cursor: pointer;
     }
 
-    .btn-camara {
+    .btn-subir {
       background: #28a745;
     }
 
@@ -55,17 +44,6 @@
       padding: 15px;
       border-radius: 12px;
       box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
-    }
-
-    #estado {
-      text-align: center;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    /* ocultamos input */
-    #foto {
-      display: none;
     }
   </style>
 </head>
@@ -84,11 +62,11 @@
     <input type="text" id="placas" placeholder="Placas">
     <input type="text" id="valido" placeholder="Válido">
 
-    <!-- INPUT OCULTO -->
+    <!-- 🔥 INPUT ORIGINAL (EL QUE SÍ FUNCIONA) -->
     <input type="file" id="foto" accept="image/*">
 
-    <button class="btn-camara" onclick="abrirCamara()">📷 Tomar / Elegir Foto</button>
-    <button class="btn-pdf" onclick="pdf()">📄 Ver PDF</button>
+    <button class="btn-subir" onclick="subir()">Subir Foto</button>
+    <button class="btn-pdf" onclick="pdf()">Ver PDF</button>
 
     <p id="estado">Fotos: 0</p>
 
@@ -97,23 +75,12 @@
 </div>
 
 <script>
-function abrirCamara() {
-  document.getElementById("foto").click();
-}
-
-// cuando el usuario toma o elige foto
-document.getElementById("foto").addEventListener("change", subir);
-
 async function subir() {
   const pedido = document.getElementById("pedido").value;
   const file = document.getElementById("foto").files[0];
 
-  if (!pedido) {
-    alert("Pedido requerido");
-    return;
-  }
-
-  if (!file) return;
+  if (!pedido) return alert("Pedido requerido");
+  if (!file) return alert("Selecciona o toma una foto");
 
   const fd = new FormData();
 
@@ -123,24 +90,19 @@ async function subir() {
   fd.append("valido", document.getElementById("valido").value);
   fd.append("fotos", file);
 
-  try {
-    const res = await fetch(`/api/pedido/${pedido}/fotos`, {
-      method: "POST",
-      body: fd
-    });
+  const res = await fetch(`/api/pedido/${pedido}/fotos`, {
+    method: "POST",
+    body: fd
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    document.getElementById("estado").innerText =
-      "Fotos: " + data.pedido.fotos.length;
+  document.getElementById("estado").innerText =
+    "Fotos: " + data.pedido.fotos.length;
 
-    alert("Foto subida ✔");
+  document.getElementById("foto").value = "";
 
-    document.getElementById("foto").value = "";
-
-  } catch (e) {
-    alert("Error al subir");
-  }
+  alert("Foto subida ✔");
 }
 
 function pdf() {

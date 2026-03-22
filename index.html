@@ -14,7 +14,6 @@
 <input type="text" id="placas" placeholder="Placas"><br><br>
 <input type="text" id="valido" placeholder="Valido"><br><br>
 
-<!-- INPUT CORREGIDO -->
 <input type="file" id="foto" accept="image/*"><br><br>
 
 <button onclick="subirFoto()">📷 Subir Foto</button>
@@ -23,22 +22,12 @@
 <p id="estado">Fotos subidas: 0</p>
 
 <script>
-const URL = "https://evidencia-app-1.onrender.com";
-
 async function subirFoto() {
   const pedido = document.getElementById("pedido").value;
-  const fileInput = document.getElementById("foto");
-  const file = fileInput.files[0];
+  const file = document.getElementById("foto").files[0];
 
-  if (!pedido) {
-    alert("Ingresa número de pedido");
-    return;
-  }
-
-  if (!file) {
-    alert("Selecciona o toma una foto");
-    return;
-  }
+  if (!pedido) return alert("Ingresa pedido");
+  if (!file) return alert("Selecciona foto");
 
   const formData = new FormData();
 
@@ -46,40 +35,26 @@ async function subirFoto() {
   formData.append("chofer", document.getElementById("chofer").value);
   formData.append("placas", document.getElementById("placas").value);
   formData.append("valido", document.getElementById("valido").value);
-
   formData.append("fotos", file);
 
-  try {
-    const res = await fetch(`${URL}/api/pedido/${pedido}/fotos`, {
-      method: "POST",
-      body: formData
-    });
+  const res = await fetch(`/api/pedido/${pedido}/fotos`, {
+    method: "POST",
+    body: formData
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    document.getElementById("estado").innerText =
-      "Fotos subidas: " + data.pedido.fotos.length;
+  document.getElementById("estado").innerText =
+    "Fotos subidas: " + data.pedido.fotos.length;
 
-    alert("Foto subida correctamente ✔");
+  alert("Foto subida ✔");
 
-    // limpiar para siguiente foto
-    fileInput.value = "";
-
-  } catch (error) {
-    console.error(error);
-    alert("Error al subir la foto ❌");
-  }
+  document.getElementById("foto").value = "";
 }
 
 function verPDF() {
   const pedido = document.getElementById("pedido").value;
-
-  if (!pedido) {
-    alert("Ingresa número de pedido");
-    return;
-  }
-
-  window.open(`${URL}/api/pedido/${pedido}/pdf`, "_blank");
+  window.open(`/api/pedido/${pedido}/pdf`, "_blank");
 }
 </script>
 

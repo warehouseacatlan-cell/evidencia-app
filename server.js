@@ -77,9 +77,14 @@ app.get("/api/pedido/:pedido/pdf", (req, res) => {
 
   const doc = new PDFDocument();
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `inline; filename=${pedido}.pdf`);
+  const fecha = new Date().toISOString().split("T")[0];
 
+const clienteLimpio = pedidoData.cliente.replace(/\s+/g, "_");
+
+const nombrePDF = `Pedido_${clienteLimpio}_${pedido}_${fecha}.pdf`;
+
+res.setHeader("Content-Type", "application/pdf");
+res.setHeader("Content-Disposition", `inline; filename=${nombrePDF}`);
   doc.pipe(res);
 
   // 🔥 LOGO SEGURO (NO ROMPE)
